@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { ImageIcon, TrashIcon } from '@/components/icons';
 import { useToast } from '@/hooks/useToast';
-import { GENERIC_ERROR, IMAGE_ACCEPT } from '@/lib/constants';
+import { IMAGE_ACCEPT } from '@/lib/constants';
 import { cn } from '@/utils/cn';
 
 interface Props {

@@ -16,7 +16,7 @@ import {
 } from '@/components/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
-import { APP_NAME, GENERIC_ERROR } from '@/lib/constants';
+import { APP_NAME } from '@/lib/constants';
 import { getDashboardStats } from '@/services/publication';
 import type { DashboardStats } from '@/types';
 import { cn } from '@/utils/cn';

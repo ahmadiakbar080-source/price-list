@@ -161,8 +161,8 @@ export function AppearancePage() {
         };
       }
 
-      const { logoFile: _lf, ...restOfDraft } = s; // eslint-disable-line @typescript-eslint/no-unused-vars
-      const { fontFamily: _ff, ...restWithoutFont } = restOfDraft as SettingsDraft; // eslint-disable-line @typescript-eslint/no-unused-vars
+      const restOfDraft = { ...s };// eslint-disable-line @typescript-eslint/no-unused-vars
+      const { fontFamily: _ff, ...restWithoutFont } = restOfDraft; // eslint-disable-line @typescript-eslint/no-unused-vars
 
       // Send everything except staged-file placeholders:
       const {
