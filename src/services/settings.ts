@@ -2,7 +2,6 @@ import { supabase } from '@/lib/supabase';
 import {
   DEFAULT_SETTINGS,
   GENERIC_ERROR,
-  IMAGE_EXTENSIONS,
   LOGO_EXTENSIONS,
   MAX_IMAGE_MB,
   MAX_FONT_MB,

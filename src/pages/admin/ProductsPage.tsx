@@ -29,7 +29,7 @@ import {
   updateProduct,
 } from '@/services/products';
 import { optimizedImageUrl } from '@/utils/assets';
-import { digitsOnly, formatPrice, normalizeForSearch } from '@/utils/format';
+import { formatPrice, normalizeForSearch } from '@/utils/format';
 import { cn } from '@/utils/cn';
 import type { Product } from '@/types';
 

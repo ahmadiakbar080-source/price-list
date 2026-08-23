@@ -1,5 +1,3 @@
-import { GENERIC_ERROR } from '@/lib/constants';
-
 export function extensionOf(fileName: string): string {
   const i = fileName.lastIndexOf('.');
   return i >= 0 ? fileName.slice(i + 1).toLowerCase() : '';

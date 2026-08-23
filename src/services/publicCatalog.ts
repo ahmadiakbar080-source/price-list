@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase';
-import { DEFAULT_SETTINGS, GENERIC_ERROR } from '@/lib/constants';
+import { DEFAULT_SETTINGS } from '@/lib/constants';
 import type { AppSettings, Product, PublicPriceListData } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/useToast';
 import {
   BUILTIN_FONTS,
   CUSTOM_FONT_FAMILY,
-  DEFAULT_SETTINGS,
   FONT_ACCEPT,
   GENERIC_ERROR,
   TABLE_STYLES,
@@ -18,7 +17,6 @@ import {
   getDraftSettings,
   removeFontFile,
   removeLogoFile,
-  toPublicSettings,
   updateDraftSettings,
   uploadCustomFont,
   uploadLogo,
