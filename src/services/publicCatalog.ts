@@ -1,0 +1,69 @@
+import { supabase } from '@/lib/supabase';
+import { DEFAULT_SETTINGS, GENERIC_ERROR } from '@/lib/constants';
+import type { AppSettings, Product, PublicPriceListData } from '@/types';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function mapPublishedSettings(row: any): AppSettings {
+  return {
+    ...DEFAULT_SETTINGS,
+    brandName: row?.brand_name ?? DEFAULT_SETTINGS.brandName,
+    listTitle: row?.list_title ?? DEFAULT_SETTINGS.listTitle,
+    currency: row?.currency ?? DEFAULT_SETTINGS.currency,
+    showUpdateDate: row?.show_update_date ?? true,
+    showLogo: row?.show_logo ?? true,
+    logoUrl: row?.logo_url ?? null,
+    fontFamily: row?.font_family ?? 'Vazirmatn',
+    customFontUrl: row?.custom_font_url ?? null,
+    customFontName: row?.custom_font_name ?? null,
+    primaryColor: row?.primary_color ?? DEFAULT_SETTINGS.primaryColor,
+    backgroundColor: row?.background_color ?? DEFAULT_SETTINGS.backgroundColor,
+    textColor: row?.text_color ?? DEFAULT_SETTINGS.textColor,
+    tableStyle: row?.table_style ?? DEFAULT_SETTINGS.tableStyle,
+    imageSize: Number(row?.image_size ?? DEFAULT_SETTINGS.imageSize),
+    borderRadius: Number(row?.border_radius ?? DEFAULT_SETTINGS.borderRadius),
+    rowSpacing: Number(row?.row_spacing ?? DEFAULT_SETTINGS.rowSpacing),
+    baseFontSize: Number(row?.base_font_size ?? DEFAULT_SETTINGS.baseFontSize),
+  };
+}
+
+function mapPublishedProduct(row: any): Product {
+  return {
+    id: String(row.id),
+    name: String(row.name ?? ''),
+    price: Number(row.price ?? 0),
+    imageUrl: row.image_url ?? null,
+    isActive: true, // guaranteed by RLS + query
+    sortOrder: Number(row.sort_order ?? 0),
+  };
+}
+
+/**
+ * Reads ONLY the published snapshot (anonymous-safe thanks to RLS).
+ * Draft tables are never touched here — enforced by the database itself.
+ */
+export async function getPublicPriceList(): Promise<PublicPriceListData> {
+  const [settingsRes, productsRes, publicationRes] = await Promise.all([
+    supabase.from('published_settings').select('*').eq('id', 1).maybeSingle(),
+    supabase
+      .from('published_products')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true }),
+    supabase
+      .from('publications')
+      .select('published_at')
+      .order('published_at', { ascending: false })
+      .limit(1),
+  ]);
+
+  if (settingsRes.error) throw new Error(settingsRes.error.message);
+  if (productsRes.error) throw new Error(productsRes.error.message);
+  if (publicationRes.error) throw new Error(publicationRes.error.message);
+
+  return {
+    settings: mapPublishedSettings(settingsRes.data),
+    products: (productsRes.data ?? []).map(mapPublishedProduct),
+    lastPublishedAt: (publicationRes.data?.[0] as any)?.published_at ?? null,
+  };
+}
