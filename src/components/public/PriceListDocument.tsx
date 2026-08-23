@@ -1,14 +1,31 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ClockIcon, ImageIcon, SearchIcon } from '@/components/icons';
 import { CUSTOM_FONT_FAMILY } from '@/lib/constants';
 import { ensureBuiltinWebfont } from '@/utils/assets';
 import { formatJalaliDate, formatNumber, normalizeForSearch } from '@/utils/format';
 import type { AppSettings, Product } from '@/types';
+import { cn } from '@/utils/cn';
 
 interface Props {
   settings: AppSettings;
   products: Product[];
   lastPublishedAt: string | null;
+}
+
+/** تعداد محصول در هر صفحه — برای نمایش همه یکجا، عدد خیلی بزرگ بگذارید (مثلاً 100000) */
+const PAGE_SIZE = 15;
+
+/** ساخت لیست شماره صفحات با «…» برای صفحات زیاد */
+function getPageNumbers(current: number, total: number): Array<number | '…'> {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const out: Array<number | '…'> = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) out.push('…');
+  for (let i = start; i <= end; i++) out.push(i);
+  if (end < total - 1) out.push('…');
+  out.push(total);
+  return out;
 }
 
 function buildCss(s: AppSettings): string {
@@ -26,7 +43,7 @@ function buildCss(s: AppSettings): string {
 .pl-root{font-family:${stack};color:${s.textColor};
   --pl-primary:${s.primaryColor};--pl-radius:${s.borderRadius}px;--pl-gap:${s.rowSpacing}px;
   --pl-fs:${s.baseFontSize}px;--pl-img:${s.imageSize}px;}
-/* پس‌زمینه: رنگ انتخابی + یک لایه گرادیان خاکستری-آبی روش تا هیچ‌وقت سفید خالی نباشد */
+/* پس‌زمینه: رنگ انتخابی + گرادیان تیره‌تر تا سفیدِ خالی نباشد */
 .pl-root{background:
   linear-gradient(180deg, rgba(51,65,85,.20) 0%, rgba(51,65,85,.07) 35%, rgba(51,65,85,.16) 100%),
   ${s.backgroundColor};}
@@ -60,13 +77,11 @@ function buildCss(s: AppSettings): string {
   background:rgba(255,255,255,.95);border:1px solid rgba(100,116,139,.14);border-radius:calc(var(--pl-radius)*.6);}
 .pl-thumb img{width:100%;height:100%;object-fit:contain;display:block;padding:2px;}
 
-/* نام محصول: وسط‌چین (هم سلول، هم هدر ستون) */
+/* نام محصول: وسط‌چین */
 .pl-name{font-weight:600;word-break:break-word;text-align:center;}
 
-/* قیمت: دوخطی — عدد بالا، «تومان» خیلی ریز زیرش */
+/* قیمت: وسط‌چین، هم‌رنگ متن، دوخطی (عدد بالا، واحد ریز زیرش) */
 .pl-table td:last-child{text-align:center;}
-
-/* قیمت: دوخطی — عدد بالا، «تومان» خیلی ریز زیرش */
 .pl-price{color:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;
   width:100%;margin-inline:auto;gap:1px;
   line-height:1.3;font-variant-numeric:tabular-nums;}
@@ -77,7 +92,7 @@ function buildCss(s: AppSettings): string {
 .pl-table[data-style='bordered'] th,
 .pl-table[data-style='bordered'] td{border:1px solid rgba(100,116,139,.16);}
 
-/* ---- موبایل: جدول فشرده بدون اسکرول افقی ---- */
+/* ---- موبایل ---- */
 @media (max-width:640px){
   .pl-table{font-size:calc(var(--pl-fs)*.88);}
   .pl-table th{padding:.55rem .5rem;font-size:.7em;}
@@ -89,21 +104,40 @@ function buildCss(s: AppSettings): string {
 }
 
 /**
- * The single renderer shared by the PUBLIC page (published data)
- * and the ADMIN PREVIEW (draft data) — preview always matches reality.
+ * Public renderer (published data) + Admin preview (draft data).
+ * Client-side pagination keeps large catalogs (e.g. 500 items) fast.
  */
 export function PriceListDocument({ settings, products, lastPublishedAt }: Props) {
   const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     ensureBuiltinWebfont(settings.fontFamily);
   }, [settings.fontFamily]);
+
+  // با تغییر عبارت جستجو، برگرد به صفحه اول
+  useEffect(() => {
+    setPage(1);
+  }, [query]);
 
   const filtered = useMemo(() => {
     const q = normalizeForSearch(query);
     if (!q) return products;
     return products.filter((p) => normalizeForSearch(p.name).includes(q));
   }, [products, query]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount);
+  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const goToPage = (p: number) => {
+    setPage(p);
+    // بعد از تغییر صفحه، به ابتدای جدول برگرد
+    requestAnimationFrame(() => {
+      tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
 
   const dateLabel = settings.showUpdateDate && lastPublishedAt ? formatJalaliDate(lastPublishedAt) : null;
 
@@ -145,8 +179,8 @@ export function PriceListDocument({ settings, products, lastPublishedAt }: Props
           />
         </div>
 
-        {/* ---------- Table (all screen sizes) ---------- */}
-        <main className="mt-7">
+        {/* ---------- Table ---------- */}
+        <main className="mt-7" ref={tableRef}>
           {filtered.length === 0 ? (
             <div className="py-16 text-center opacity-70">
               <ImageIcon className="mx-auto mb-3 text-4xl opacity-40" />
@@ -155,44 +189,98 @@ export function PriceListDocument({ settings, products, lastPublishedAt }: Props
               </p>
             </div>
           ) : (
-            <div className="pl-table-wrap">
-              <table className="pl-table" data-style={settings.tableStyle}>
-                <colgroup>
-                  <col className="c-img" />
-                  <col />
-                  <col className="c-price" />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th scope="col">تصویر</th>
-                    <th scope="col">نام محصول</th>
-                    <th scope="col">قیمت مصرف‌کننده</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((p) => (
-                    <tr key={p.id}>
-                      <td>
-                        <div className="pl-thumb">
-                          {p.imageUrl ? (
-                            <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" />
-                          ) : (
-                            <ImageIcon className="text-lg opacity-30" />
-                          )}
-                        </div>
-                      </td>
-                      <td className="pl-name">{p.name}</td>
-                      <td>
-                        <div className="pl-price">
-                          <span className="pl-price-num">{formatNumber(p.price)}</span>
-                          <span className="pl-price-cur">{settings.currency}</span>
-                        </div>
-                      </td>
+            <>
+              <div className="pl-table-wrap">
+                <table className="pl-table" data-style={settings.tableStyle}>
+                  <colgroup>
+                    <col className="c-img" />
+                    <col />
+                    <col className="c-price" />
+                  </colgroup>
+                  <thead>
+                    <tr>
+                      <th scope="col">تصویر</th>
+                      <th scope="col">نام محصول</th>
+                      <th scope="col">قیمت مصرف‌کننده</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {paged.map((p) => (
+                      <tr key={p.id}>
+                        <td>
+                          <div className="pl-thumb">
+                            {p.imageUrl ? (
+                              <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" />
+                            ) : (
+                              <ImageIcon className="text-lg opacity-30" />
+                            )}
+                          </div>
+                        </td>
+                        <td className="pl-name">{p.name}</td>
+                        <td>
+                          <div className="pl-price">
+                            <span className="pl-price-num">{formatNumber(p.price)}</span>
+                            <span className="pl-price-cur">{settings.currency}</span>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ---------- Pagination ---------- */}
+              {pageCount > 1 && (
+                <nav className="mt-5 flex flex-col items-center gap-3" aria-label="صفحه‌بندی">
+                  <p className="text-xs opacity-60 tabular-nums">
+                    صفحه {formatNumber(safePage)} از {formatNumber(pageCount)} — مجموع{' '}
+                    {formatNumber(filtered.length)} محصول
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => goToPage(safePage - 1)}
+                      disabled={safePage <= 1}
+                      className="rounded-lg border border-slate-300 bg-white/90 px-3 py-1.5 text-xs font-medium shadow-sm transition hover:bg-white disabled:pointer-events-none disabled:opacity-40"
+                    >
+                      قبلی
+                    </button>
+
+                    {getPageNumbers(safePage, pageCount).map((n, idx) =>
+                      n === '…' ? (
+                        <span key={`e-${idx}`} className="px-1 text-xs opacity-50">
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => goToPage(n)}
+                          aria-current={n === safePage ? 'page' : undefined}
+                          className={cn(
+                            'min-w-8 rounded-lg px-2.5 py-1.5 text-xs font-bold tabular-nums shadow-sm transition',
+                            n === safePage
+                              ? 'bg-indigo-600 text-white'
+                              : 'border border-slate-300 bg-white/90 hover:bg-white',
+                          )}
+                        >
+                          {formatNumber(n)}
+                        </button>
+                      ),
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => goToPage(safePage + 1)}
+                      disabled={safePage >= pageCount}
+                      className="rounded-lg border border-slate-300 bg-white/90 px-3 py-1.5 text-xs font-medium shadow-sm transition hover:bg-white disabled:pointer-events-none disabled:opacity-40"
+                    >
+                      بعدی
+                    </button>
+                  </div>
+                </nav>
+              )}
+            </>
           )}
         </main>
 
