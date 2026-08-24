@@ -31,6 +31,7 @@ function mapPublishedProduct(row: any): Product {
     id: String(row.id),
     name: String(row.name ?? ''),
     price: Number(row.price ?? 0),
+    description: row.description ?? null,
     imageUrl: row.image_url ?? null,
     categoryId: row.category_id ?? null,
     isActive: true,

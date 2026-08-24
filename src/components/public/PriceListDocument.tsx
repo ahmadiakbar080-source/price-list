@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ClockIcon, ImageIcon, SearchIcon, TagIcon } from '@/components/icons';
+import {
+  ClockIcon,
+  ImageIcon,
+  SearchIcon,
+  ShareIcon,
+  TagIcon,
+} from '@/components/icons';
+import { ImageLightbox } from '@/components/public/ImageLightbox';
+import { ProductDetailModal } from '@/components/public/ProductDetailModal';
 import { CUSTOM_FONT_FAMILY } from '@/lib/constants';
+import { useToast } from '@/hooks/useToast';
 import { ensureBuiltinWebfont } from '@/utils/assets';
 import { formatJalaliDate, formatNumber, normalizeForSearch } from '@/utils/format';
+import { shareOrCopy } from '@/utils/share';
 import { cn } from '@/utils/cn';
 import type { AppSettings, Category, Product } from '@/types';
 
@@ -11,6 +21,8 @@ interface Props {
   products: Product[];
   categories: Category[];
   lastPublishedAt: string | null;
+  /** در پیش‌نمایش ادمین، دکمه‌های اشتراک‌گذاری مخفی می‌شوند */
+  isPreview?: boolean;
 }
 
 const PAGE_SIZE = 50;
@@ -89,7 +101,8 @@ function buildCss(s: AppSettings): string {
   border-bottom:1px solid rgba(100,116,139,.10);}
 .pl-table tbody tr:last-child td{border-bottom:none;}
 
-.pl-table tbody tr{transition:background .15s ease;}
+/* ردیف‌ها: زوج/فرد + هاور + نشانگر کلیک (باز شدن جزئیات) */
+.pl-table tbody tr{transition:background .15s ease;cursor:pointer;}
 .pl-table tbody tr:nth-child(even){background:rgba(100,116,139,.10);}
 .pl-table[data-style='striped'] tbody tr:nth-child(even){background:rgba(100,116,139,.18);}
 .pl-table tbody tr:hover{background:rgba(100,116,139,.14);}
@@ -124,11 +137,22 @@ function buildCss(s: AppSettings): string {
 `;
 }
 
-export function PriceListDocument({ settings, products, categories, lastPublishedAt }: Props) {
+export function PriceListDocument({
+  settings,
+  products,
+  categories,
+  lastPublishedAt,
+  isPreview = false,
+}: Props) {
+  const toast = useToast();
   const [query, setQuery] = useState('');
   const [activeCat, setActiveCat] = useState<string>('all');
   const [page, setPage] = useState(1);
   const tableRef = useRef<HTMLDivElement>(null);
+
+  // پاپ‌آپ جزئیات + لایت‌باکس زوم
+  const [detail, setDetail] = useState<Product | null>(null);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
 
   useEffect(() => {
     ensureBuiltinWebfont(settings.fontFamily);
@@ -156,6 +180,21 @@ export function PriceListDocument({ settings, products, categories, lastPublishe
     });
   };
 
+  /** اشتراک‌گذاری کل لیست (Web Share API + fallback کپی) */
+  const shareList = async () => {
+    try {
+      const res = await shareOrCopy({
+        title: settings.brandName,
+        text: `${settings.brandName} — ${settings.listTitle}`,
+        url: window.location.origin + window.location.pathname,
+      });
+      if (res === 'copied') toast.success('لینک لیست قیمت کپی شد.');
+    } catch (e) {
+      console.error(e);
+      toast.error('خطا در اشتراک‌گذاری. لطفاً دوباره تلاش کنید.');
+    }
+  };
+
   const dateLabel = settings.showUpdateDate && lastPublishedAt ? formatJalaliDate(lastPublishedAt) : null;
 
   return (
@@ -181,10 +220,24 @@ export function PriceListDocument({ settings, products, categories, lastPublishe
               آخرین به‌روزرسانی: {dateLabel}
             </p>
           )}
+
+          {/* دکمه اشتراک‌گذاری لیست */}
+          {!isPreview && (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => void shareList()}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white/85 px-4 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-indigo-300 hover:text-indigo-600"
+              >
+                <ShareIcon />
+                اشتراک‌گذاری لیست قیمت
+              </button>
+            </div>
+          )}
         </header>
 
         {/* ---------- Search ---------- */}
-        <div className="relative mx-auto mt-7 max-w-md">
+        <div className="relative mx-auto mt-6 max-w-md">
           <SearchIcon className="pointer-events-none absolute end-3.5 top-1/2 -translate-y-1/2 text-base opacity-40" />
           <input
             type="search"
@@ -236,6 +289,10 @@ export function PriceListDocument({ settings, products, categories, lastPublishe
             </div>
           ) : (
             <>
+              <p className="mb-2 text-center text-[11px] opacity-50">
+                برای مشاهده توضیحات و اشتراک‌گذاری، روی محصول کلیک کنید
+              </p>
+
               <div className="pl-table-wrap">
                 <table className="pl-table" data-style={settings.tableStyle}>
                   <colgroup>
@@ -252,8 +309,14 @@ export function PriceListDocument({ settings, products, categories, lastPublishe
                   </thead>
                   <tbody>
                     {paged.map((p) => (
-                      <tr key={p.id}>
-                        <td>
+                      <tr key={p.id} onClick={() => setDetail(p)}>
+                        <td
+                          onClick={(e) => {
+                            // کلیک روی عکس → لایت‌باکس (نه پاپ‌آپ جزئیات)
+                            e.stopPropagation();
+                            if (p.imageUrl) setLightbox({ src: p.imageUrl, alt: p.name });
+                          }}
+                        >
                           <div className="pl-thumb">
                             {p.imageUrl ? (
                               <img src={p.imageUrl} alt={p.name} loading="lazy" decoding="async" />
@@ -334,6 +397,21 @@ export function PriceListDocument({ settings, products, categories, lastPublishe
           همه قیمت‌ها به «{settings.currency}» است — {settings.brandName}
         </footer>
       </div>
+
+      {/* ---------- Modals ---------- */}
+      {detail && (
+        <ProductDetailModal
+          product={detail}
+          categoryName={categories.find((c) => c.id === detail.categoryId)?.name ?? null}
+          settings={settings}
+          onZoomImage={(src, alt) => setLightbox({ src, alt })}
+          onClose={() => setDetail(null)}
+        />
+      )}
+
+      {lightbox && (
+        <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
+      )}
     </div>
   );
 }

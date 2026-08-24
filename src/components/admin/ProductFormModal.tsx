@@ -29,6 +29,7 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState<number | null>(null);
+  const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [isActive, setIsActive] = useState(true);
@@ -47,6 +48,7 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
     if (product) {
       setName(product.name);
       setPrice(product.price);
+      setDescription(product.description ?? '');
       setCategoryId(product.categoryId ?? '');
       setIsActive(product.isActive);
       setSortOrder(product.sortOrder);
@@ -78,6 +80,7 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
       const payload = {
         name: name.trim(),
         price: price as number,
+        description: description.trim() || null,
         categoryId: categoryId || null,
         imageUrl: uploaded ? uploaded.url : keepExisting ? (product?.imageUrl ?? null) : null,
         imagePath: uploaded ? uploaded.path : keepExisting ? (product?.imagePath ?? null) : null,
@@ -127,14 +130,34 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
         />
 
         <Input
-          label="نام محصول"
-          value={name}
-          maxLength={200}
-          disabled={submitting}
-          error={errors.name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="مثلاً: روغن موتور ۴ لیتری"
-        />
+  label="نام محصول"
+  value={name}
+  maxLength={200}
+  disabled={submitting}
+  error={errors.name}
+  onChange={(e) => setName(e.target.value)}
+  placeholder="مثلاً: روغن موتور ۴ لیتری"
+/>
+
+<label className="block">
+  <span className="mb-1.5 block text-sm font-medium text-slate-700">
+    توضیحات کوتاه <span className="font-normal text-slate-400">(اختیاری)</span>
+  </span>
+
+  <textarea
+    value={description}
+    maxLength={2000}
+    rows={3}
+    disabled={submitting}
+    onChange={(e) => setDescription(e.target.value)}
+    placeholder="مشخصات، جنس، ابعاد، نکات فنی…"
+    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 disabled:opacity-60"
+  />
+
+  <p className="mt-1 text-xs text-slate-400">
+    در پاپ‌آپ جزئیات محصول در صفحه عمومی نمایش داده می‌شود. ({description.length}/2000)
+  </p>
+</label>
 
         {/* دسته‌بندی */}
         <label className="block">

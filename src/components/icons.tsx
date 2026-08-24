@@ -188,6 +188,48 @@ export const TagIcon = (p: P) => (
   </Svg>
 );
 
+export const ShareIcon = (p: P) => (
+  <Svg {...p}>
+    <circle cx="18" cy="5" r="2.5" />
+    <circle cx="6" cy="12" r="2.5" />
+    <circle cx="18" cy="19" r="2.5" />
+    <path d="m8.2 10.9 7.6-4.4M8.2 13.1l7.6 4.4" />
+  </Svg>
+);
+
+export const ZoomInIcon = (p: P) => (
+  <Svg {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m21 21-4.3-4.3M11 8v6M8 11h6" />
+  </Svg>
+);
+
+export const ZoomOutIcon = (p: P) => (
+  <Svg {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m21 21-4.3-4.3M8 11h6" />
+  </Svg>
+);
+
+export const SendIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="m22 2-7 20-4-9-9-4 20-7z" />
+  </Svg>
+);
+
+export const CopyIcon = (p: P) => (
+  <Svg {...p}>
+    <rect x="9" y="9" width="12" height="12" rx="2" />
+    <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+  </Svg>
+);
+
+export const ChatIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M21 12a8 8 0 0 1-8 8H4l1.5-3A8 8 0 1 1 21 12z" />
+  </Svg>
+);
+
 export const RefreshIcon = (p: P) => (
   <Svg {...p}>
     <path d="M21 12a9 9 0 1 1-2.9-6.6" />

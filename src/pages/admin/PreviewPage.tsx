@@ -72,6 +72,7 @@ export function PreviewPage() {
   products={products}
   categories={categories}
   lastPublishedAt={new Date().toISOString()}
+  isPreview
 />
       </div>
     </div>

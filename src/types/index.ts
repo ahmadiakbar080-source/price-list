@@ -6,6 +6,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  description: string | null;
   categoryId: string | null;
   imageUrl: string | null;
   /** Present on draft rows only (used for storage lifecycle). */
@@ -19,6 +20,7 @@ export interface Product {
 export interface ProductInput {
   name: string;
   price: number;
+  description: string | null;
   categoryId: string | null;
   imageUrl: string | null;
   imagePath: string | null;
