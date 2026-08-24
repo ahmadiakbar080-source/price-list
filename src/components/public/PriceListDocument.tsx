@@ -1,21 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ClockIcon, ImageIcon, SearchIcon } from '@/components/icons';
+import { ClockIcon, ImageIcon, SearchIcon, TagIcon } from '@/components/icons';
 import { CUSTOM_FONT_FAMILY } from '@/lib/constants';
 import { ensureBuiltinWebfont } from '@/utils/assets';
 import { formatJalaliDate, formatNumber, normalizeForSearch } from '@/utils/format';
-import type { AppSettings, Product } from '@/types';
 import { cn } from '@/utils/cn';
+import type { AppSettings, Category, Product } from '@/types';
 
 interface Props {
   settings: AppSettings;
   products: Product[];
+  categories: Category[];
   lastPublishedAt: string | null;
 }
 
-/** تعداد محصول در هر صفحه — برای نمایش همه یکجا، عدد خیلی بزرگ بگذارید (مثلاً 100000) */
-const PAGE_SIZE = 15;
+const PAGE_SIZE = 50;
 
-/** ساخت لیست شماره صفحات با «…» برای صفحات زیاد */
 function getPageNumbers(current: number, total: number): Array<number | '…'> {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const out: Array<number | '…'> = [1];
@@ -26,6 +25,36 @@ function getPageNumbers(current: number, total: number): Array<number | '…'> {
   if (end < total - 1) out.push('…');
   out.push(total);
   return out;
+}
+
+function CategoryChip({
+  active,
+  label,
+  count,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  count: number;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-bold shadow-sm transition',
+        active
+          ? 'border-indigo-600 bg-indigo-600 text-white'
+          : 'border-slate-300 bg-white/85 text-slate-600 hover:border-indigo-300 hover:text-indigo-600',
+      )}
+    >
+      {label}
+      <span className={cn('ms-1 tabular-nums', active ? 'opacity-80' : 'opacity-50')}>
+        ({formatNumber(count)})
+      </span>
+    </button>
+  );
 }
 
 function buildCss(s: AppSettings): string {
@@ -43,7 +72,6 @@ function buildCss(s: AppSettings): string {
 .pl-root{font-family:${stack};color:${s.textColor};
   --pl-primary:${s.primaryColor};--pl-radius:${s.borderRadius}px;--pl-gap:${s.rowSpacing}px;
   --pl-fs:${s.baseFontSize}px;--pl-img:${s.imageSize}px;}
-/* پس‌زمینه: رنگ انتخابی + گرادیان تیره‌تر تا سفیدِ خالی نباشد */
 .pl-root{background:
   linear-gradient(180deg, rgba(51,65,85,.20) 0%, rgba(51,65,85,.07) 35%, rgba(51,65,85,.16) 100%),
   ${s.backgroundColor};}
@@ -61,26 +89,21 @@ function buildCss(s: AppSettings): string {
   border-bottom:1px solid rgba(100,116,139,.10);}
 .pl-table tbody tr:last-child td{border-bottom:none;}
 
-/* ---- ردیف‌های زوج و فرد ---- */
 .pl-table tbody tr{transition:background .15s ease;}
 .pl-table tbody tr:nth-child(even){background:rgba(100,116,139,.10);}
 .pl-table[data-style='striped'] tbody tr:nth-child(even){background:rgba(100,116,139,.18);}
 .pl-table tbody tr:hover{background:rgba(100,116,139,.14);}
 
-/* ---- عرض ستون‌ها ---- */
 .pl-table col.c-img{width:calc(var(--pl-img) + 1.9rem);}
 .pl-table col.c-price{width:7.6rem;}
 
-/* تصویر وسط ستون خودش */
 .pl-table td:first-child .pl-thumb{margin-inline:auto;}
 .pl-thumb{width:var(--pl-img);height:var(--pl-img);flex:0 0 auto;display:flex;align-items:center;justify-content:center;overflow:hidden;
   background:rgba(255,255,255,.95);border:1px solid rgba(100,116,139,.14);border-radius:calc(var(--pl-radius)*.6);}
 .pl-thumb img{width:100%;height:100%;object-fit:contain;display:block;padding:2px;}
 
-/* نام محصول: وسط‌چین */
 .pl-name{font-weight:600;word-break:break-word;text-align:center;}
 
-/* قیمت: وسط‌چین، هم‌رنگ متن، دوخطی (عدد بالا، واحد ریز زیرش) */
 .pl-table td:last-child{text-align:center;}
 .pl-price{color:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;
   width:100%;margin-inline:auto;gap:1px;
@@ -88,11 +111,9 @@ function buildCss(s: AppSettings): string {
 .pl-price-num{font-size:.8em;font-weight:600;white-space:nowrap;}
 .pl-price-cur{font-size:.5em;font-weight:500;opacity:.65;white-space:nowrap;}
 
-/* حالت خط‌کشی‌شده */
 .pl-table[data-style='bordered'] th,
 .pl-table[data-style='bordered'] td{border:1px solid rgba(100,116,139,.16);}
 
-/* ---- موبایل ---- */
 @media (max-width:640px){
   .pl-table{font-size:calc(var(--pl-fs)*.88);}
   .pl-table th{padding:.55rem .5rem;font-size:.7em;}
@@ -103,12 +124,9 @@ function buildCss(s: AppSettings): string {
 `;
 }
 
-/**
- * Public renderer (published data) + Admin preview (draft data).
- * Client-side pagination keeps large catalogs (e.g. 500 items) fast.
- */
-export function PriceListDocument({ settings, products, lastPublishedAt }: Props) {
+export function PriceListDocument({ settings, products, categories, lastPublishedAt }: Props) {
   const [query, setQuery] = useState('');
+  const [activeCat, setActiveCat] = useState<string>('all');
   const [page, setPage] = useState(1);
   const tableRef = useRef<HTMLDivElement>(null);
 
@@ -116,16 +134,16 @@ export function PriceListDocument({ settings, products, lastPublishedAt }: Props
     ensureBuiltinWebfont(settings.fontFamily);
   }, [settings.fontFamily]);
 
-  // با تغییر عبارت جستجو، برگرد به صفحه اول
   useEffect(() => {
     setPage(1);
-  }, [query]);
+  }, [query, activeCat]);
 
   const filtered = useMemo(() => {
+    let list = activeCat === 'all' ? products : products.filter((p) => p.categoryId === activeCat);
     const q = normalizeForSearch(query);
-    if (!q) return products;
-    return products.filter((p) => normalizeForSearch(p.name).includes(q));
-  }, [products, query]);
+    if (q) list = list.filter((p) => normalizeForSearch(p.name).includes(q));
+    return list;
+  }, [products, query, activeCat]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
@@ -133,7 +151,6 @@ export function PriceListDocument({ settings, products, lastPublishedAt }: Props
 
   const goToPage = (p: number) => {
     setPage(p);
-    // بعد از تغییر صفحه، به ابتدای جدول برگرد
     requestAnimationFrame(() => {
       tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -179,13 +196,42 @@ export function PriceListDocument({ settings, products, lastPublishedAt }: Props
           />
         </div>
 
+        {/* ---------- Category chips ---------- */}
+        {categories.length > 0 && (
+          <div className="mt-5 flex gap-2 overflow-x-auto pb-1.5" role="tablist" aria-label="دسته‌بندی‌ها">
+            <CategoryChip
+              active={activeCat === 'all'}
+              label="همه"
+              count={products.length}
+              onClick={() => setActiveCat('all')}
+            />
+            {categories.map((c) => (
+              <CategoryChip
+                key={c.id}
+                active={activeCat === c.id}
+                label={c.name}
+                count={products.filter((p) => p.categoryId === c.id).length}
+                onClick={() => setActiveCat(c.id)}
+              />
+            ))}
+          </div>
+        )}
+
         {/* ---------- Table ---------- */}
-        <main className="mt-7" ref={tableRef}>
+        <main className="mt-4" ref={tableRef}>
           {filtered.length === 0 ? (
             <div className="py-16 text-center opacity-70">
-              <ImageIcon className="mx-auto mb-3 text-4xl opacity-40" />
+              {activeCat !== 'all' && query === '' ? (
+                <TagIcon className="mx-auto mb-3 text-4xl opacity-40" />
+              ) : (
+                <ImageIcon className="mx-auto mb-3 text-4xl opacity-40" />
+              )}
               <p className="text-sm font-medium">
-                {query ? 'محصولی با این نام پیدا نشد.' : 'هنوز محصولی منتشر نشده است.'}
+                {query
+                  ? 'محصولی با این نام پیدا نشد.'
+                  : activeCat !== 'all'
+                    ? 'محصولی در این دسته‌بندی منتشر نشده است.'
+                    : 'هنوز محصولی منتشر نشده است.'}
               </p>
             </div>
           ) : (

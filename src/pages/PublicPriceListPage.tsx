@@ -55,5 +55,12 @@ export function PublicPriceListPage() {
 
   if (!data) return <FullPageLoader label="در حال دریافت لیست قیمت…" />;
 
-  return <PriceListDocument settings={data.settings} products={data.products} lastPublishedAt={data.lastPublishedAt} />;
+    return (
+    <PriceListDocument
+      settings={data.settings}
+      products={data.products}
+      categories={data.categories}
+      lastPublishedAt={data.lastPublishedAt}
+    />
+  );
 }

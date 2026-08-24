@@ -13,12 +13,13 @@ import {
   updateProduct,
   uploadProductImage,
 } from '@/services/products';
+import { listCategories } from '@/services/categories';
 import { removeFromBucket } from '@/services/storage';
-import type { Product } from '@/types';
+import type { Category, Product } from '@/types';
 
 interface Props {
   open: boolean;
-  product: Product | null; // null => create mode
+  product: Product | null; // null => حالت افزودن
   onClose: () => void;
   onSaved: () => void;
 }
@@ -28,6 +29,8 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState<number | null>(null);
+  const [categoryId, setCategoryId] = useState<string>('');
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isActive, setIsActive] = useState(true);
   const [sortOrder, setSortOrder] = useState<number>(10);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -40,14 +43,17 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
     setErrors({});
     setImageFile(null);
     setClearImage(false);
+    void listCategories().then(setCategories).catch(() => setCategories([]));
     if (product) {
       setName(product.name);
       setPrice(product.price);
+      setCategoryId(product.categoryId ?? '');
       setIsActive(product.isActive);
       setSortOrder(product.sortOrder);
     } else {
       setName('');
       setPrice(null);
+      setCategoryId('');
       setIsActive(true);
       void getNextSortOrder().then(setSortOrder);
     }
@@ -72,6 +78,7 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
       const payload = {
         name: name.trim(),
         price: price as number,
+        categoryId: categoryId || null,
         imageUrl: uploaded ? uploaded.url : keepExisting ? (product?.imageUrl ?? null) : null,
         imagePath: uploaded ? uploaded.path : keepExisting ? (product?.imagePath ?? null) : null,
         isActive,
@@ -90,7 +97,7 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
       onClose();
     } catch (error) {
       console.error('[ProductFormModal]', error);
-      toast.error(error instanceof Error && error.message !== GENERIC_ERROR ? error.message : GENERIC_ERROR);
+      toast.error(GENERIC_ERROR);
     } finally {
       setSubmitting(false);
     }
@@ -126,8 +133,29 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
           disabled={submitting}
           error={errors.name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="مثلاً: شامپو بدن婴儿" /* placeholder kept simple below */
+          placeholder="مثلاً: روغن موتور ۴ لیتری"
         />
+
+        {/* دسته‌بندی */}
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-slate-700">دسته‌بندی</span>
+          <select
+            value={categoryId}
+            disabled={submitting}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none focus:border-indigo-500"
+          >
+            <option value="">بدون دسته‌بندی</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-400">
+            دسته‌بندی‌های جدید را از منوی «دسته‌بندی‌ها» بسازید.
+          </p>
+        </label>
 
         <div>
           <span className="mb-1.5 block text-sm font-medium text-slate-700">قیمت مصرف‌کننده</span>

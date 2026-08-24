@@ -12,6 +12,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const d = data as any;
   return {
     totalProducts: Number(d.total_products ?? 0),
+    totalCategories: Number(d.total_categories ?? 0),
     activeProducts: Number(d.active_products ?? 0),
     inactiveProducts: Number(d.inactive_products ?? 0),
     lastPublishedAt: d.last_published_at ?? null,

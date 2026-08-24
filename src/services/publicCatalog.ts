@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_SETTINGS } from '@/lib/constants';
-import type { AppSettings, Product, PublicPriceListData } from '@/types';
+import type { AppSettings, Category, Product, PublicPriceListData } from '@/types';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function mapPublishedSettings(row: any): AppSettings {
@@ -32,17 +32,23 @@ function mapPublishedProduct(row: any): Product {
     name: String(row.name ?? ''),
     price: Number(row.price ?? 0),
     imageUrl: row.image_url ?? null,
-    isActive: true, // guaranteed by RLS + query
+    categoryId: row.category_id ?? null,
+    isActive: true,
     sortOrder: Number(row.sort_order ?? 0),
   };
 }
 
-/**
- * Reads ONLY the published snapshot (anonymous-safe thanks to RLS).
- * Draft tables are never touched here — enforced by the database itself.
- */
+function mapPublishedCategory(row: any): Category {
+  return {
+    id: String(row.id),
+    name: String(row.name ?? ''),
+    sortOrder: Number(row.sort_order ?? 0),
+  };
+}
+
+/** فقط اسنپ‌شات منتشرشده — دسته‌ها هم از published_categories می‌آیند. */
 export async function getPublicPriceList(): Promise<PublicPriceListData> {
-  const [settingsRes, productsRes, publicationRes] = await Promise.all([
+  const [settingsRes, productsRes, categoriesRes, publicationRes] = await Promise.all([
     supabase.from('published_settings').select('*').eq('id', 1).maybeSingle(),
     supabase
       .from('published_products')
@@ -50,6 +56,7 @@ export async function getPublicPriceList(): Promise<PublicPriceListData> {
       .eq('is_active', true)
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true }),
+    supabase.from('published_categories').select('*').order('sort_order', { ascending: true }),
     supabase
       .from('publications')
       .select('published_at')
@@ -59,11 +66,13 @@ export async function getPublicPriceList(): Promise<PublicPriceListData> {
 
   if (settingsRes.error) throw new Error(settingsRes.error.message);
   if (productsRes.error) throw new Error(productsRes.error.message);
+  if (categoriesRes.error) throw new Error(categoriesRes.error.message);
   if (publicationRes.error) throw new Error(publicationRes.error.message);
 
   return {
     settings: mapPublishedSettings(settingsRes.data),
     products: (productsRes.data ?? []).map(mapPublishedProduct),
+    categories: (categoriesRes.data ?? []).map(mapPublishedCategory),
     lastPublishedAt: (publicationRes.data?.[0] as any)?.published_at ?? null,
   };
 }

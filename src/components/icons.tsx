@@ -181,6 +181,13 @@ export const InboxIcon = (p: P) => (
   </Svg>
 );
 
+export const TagIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z" />
+    <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none" />
+  </Svg>
+);
+
 export const RefreshIcon = (p: P) => (
   <Svg {...p}>
     <path d="M21 12a9 9 0 1 1-2.9-6.6" />

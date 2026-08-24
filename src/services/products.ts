@@ -13,6 +13,7 @@ function mapProduct(row: any): Product {
     id: String(row.id),
     name: String(row.name ?? ''),
     price: Number(row.price ?? 0),
+    categoryId: row.category_id ?? null,
     imageUrl: row.image_url ?? null,
     imagePath: row.image_path ?? null,
     isActive: Boolean(row.is_active),
@@ -41,6 +42,7 @@ export async function createProduct(input: ProductInput): Promise<Product> {
     .insert({
       name: input.name,
       price: input.price,
+      category_id: input.categoryId,
       image_url: input.imageUrl,
       image_path: input.imagePath,
       is_active: input.isActive,
@@ -59,6 +61,7 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
   const upd: Record<string, unknown> = {};
   if (patch.name !== undefined) upd.name = patch.name;
   if (patch.price !== undefined) upd.price = patch.price;
+  if (patch.categoryId !== undefined) upd.category_id = patch.categoryId;
   if (patch.imageUrl !== undefined) upd.image_url = patch.imageUrl;
   if (patch.imagePath !== undefined) upd.image_path = patch.imagePath;
   if (patch.isActive !== undefined) upd.is_active = patch.isActive;

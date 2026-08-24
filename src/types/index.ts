@@ -6,6 +6,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  categoryId: string | null;
   imageUrl: string | null;
   /** Present on draft rows only (used for storage lifecycle). */
   imagePath?: string | null;
@@ -18,6 +19,7 @@ export interface Product {
 export interface ProductInput {
   name: string;
   price: number;
+  categoryId: string | null;
   imageUrl: string | null;
   imagePath: string | null;
   isActive: boolean;
@@ -58,8 +60,17 @@ export interface Publication {
   publishedAt: string;
 }
 
+export interface Category {
+  id: string;
+  name: string;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface DashboardStats {
   totalProducts: number;
+  totalCategories: number;
   activeProducts: number;
   inactiveProducts: number;
   lastPublishedAt: string | null;
@@ -70,6 +81,7 @@ export interface DashboardStats {
 export interface PublicPriceListData {
   settings: AppSettings;
   products: Product[];
+  categories: Category[];
   lastPublishedAt: string | null;
 }
 
