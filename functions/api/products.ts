@@ -1,36 +1,37 @@
-import { createClient } from '@supabase/supabase-js';
-
 export async function onRequest(context: any) {
-  const supabaseUrl = context.env.VITE_SUPABASE_URL || context.env.SUPABASE_URL;
-  const supabaseKey = context.env.VITE_SUPABASE_ANON_KEY || context.env.SUPABASE_KEY;
+  const url = context.env.VITE_SUPABASE_URL || context.env.SUPABASE_URL;
+  const key = context.env.VITE_SUPABASE_ANON_KEY || context.env.SUPABASE_KEY;
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  // دریافت همزمان تمام اطلاعات لازم از Supabase
-  const [settingsRes, productsRes, categoriesRes, publicationRes] = await Promise.all([
-    supabase.from('published_settings').select('*').eq('id', 1).maybeSingle(),
-    supabase
-      .from('published_products')
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true }),
-    supabase.from('published_categories').select('*').order('sort_order', { ascending: true }),
-    supabase
-      .from('publications')
-      .select('published_at')
-      .order('published_at', { ascending: false })
-      .limit(1),
-  ]);
-
-  if (settingsRes.error || productsRes.error || categoriesRes.error || publicationRes.error) {
-    return Response.json({ error: 'خطا در دریافت اطلاعات از دیتابیس' }, { status: 500 });
+  if (!url || !key) {
+    return Response.json({ error: "Supabase keys are missing" }, { status: 500 });
   }
 
-  return Response.json({
-    settings: settingsRes.data,
-    products: productsRes.data,
-    categories: categoriesRes.data,
-    publication: publicationRes.data?.[0] ?? null,
-  });
+  const headers = {
+    'apikey': key,
+    'Authorization': `Bearer ${key}`,
+    'Content-Type': 'application/json',
+  };
+
+  try {
+    const [settingsRes, productsRes, categoriesRes, pubRes] = await Promise.all([
+      fetch(`${url}/rest/v1/published_settings?id=eq.1`, { headers }),
+      fetch(`${url}/rest/v1/published_products?is_active=eq.true&order=sort_order.asc,name.asc`, { headers }),
+      fetch(`${url}/rest/v1/published_categories?order=sort_order.asc`, { headers }),
+      fetch(`${url}/rest/v1/publications?order=published_at.desc&limit=1`, { headers }),
+    ]);
+
+    const settingsData = await settingsRes.json();
+    const productsData = await productsRes.json();
+    const categoriesData = await categoriesRes.json();
+    const pubData = await pubRes.json();
+
+    return Response.json({
+      settings: Array.isArray(settingsData) ? settingsData[0] : null,
+      products: Array.isArray(productsData) ? productsData : [],
+      categories: Array.isArray(categoriesData) ? categoriesData : [],
+      publication: Array.isArray(pubData) ? pubData[0] : null,
+    });
+  } catch (error: any) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
 }
