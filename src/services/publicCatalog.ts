@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase';
 import { DEFAULT_SETTINGS } from '@/lib/constants';
 import type { AppSettings, Category, Product, PublicPriceListData } from '@/types';
 
@@ -47,33 +46,20 @@ function mapPublishedCategory(row: any): Category {
   };
 }
 
-/** فقط اسنپ‌شات منتشرشده — دسته‌ها هم از published_categories می‌آیند. */
+/** دریافت اطلاعات کامل لیست قیمت از طریق Cloudflare Function */
 export async function getPublicPriceList(): Promise<PublicPriceListData> {
-  const [settingsRes, productsRes, categoriesRes, publicationRes] = await Promise.all([
-    supabase.from('published_settings').select('*').eq('id', 1).maybeSingle(),
-    supabase
-      .from('published_products')
-      .select('*')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .order('name', { ascending: true }),
-    supabase.from('published_categories').select('*').order('sort_order', { ascending: true }),
-    supabase
-      .from('publications')
-      .select('published_at')
-      .order('published_at', { ascending: false })
-      .limit(1),
-  ]);
+  const response = await fetch('/api/products');
 
-  if (settingsRes.error) throw new Error(settingsRes.error.message);
-  if (productsRes.error) throw new Error(productsRes.error.message);
-  if (categoriesRes.error) throw new Error(categoriesRes.error.message);
-  if (publicationRes.error) throw new Error(publicationRes.error.message);
+  if (!response.ok) {
+    throw new Error('خطا در دریافت اطلاعات از API');
+  }
+
+  const data = await response.json();
 
   return {
-    settings: mapPublishedSettings(settingsRes.data),
-    products: (productsRes.data ?? []).map(mapPublishedProduct),
-    categories: (categoriesRes.data ?? []).map(mapPublishedCategory),
-    lastPublishedAt: (publicationRes.data?.[0] as any)?.published_at ?? null,
+    settings: mapPublishedSettings(data.settings),
+    products: (data.products ?? []).map(mapPublishedProduct),
+    categories: (data.categories ?? []).map(mapPublishedCategory),
+    lastPublishedAt: data.publication?.published_at ?? null,
   };
 }
