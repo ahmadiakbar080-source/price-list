@@ -230,6 +230,34 @@ export const ChatIcon = (p: P) => (
   </Svg>
 );
 
+export const HeartIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 20s-7.5-4.6-9.3-9A5.2 5.2 0 0 1 12 6.6 5.2 5.2 0 0 1 21.3 11c-1.8 4.4-9.3 9-9.3 9z" />
+  </Svg>
+);
+
+export const CompareIcon = (p: P) => (
+  <Svg {...p}>
+    <rect x="3" y="4" width="7" height="16" rx="1.5" />
+    <rect x="14" y="4" width="7" height="16" rx="1.5" />
+  </Svg>
+);
+
+export const PercentIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M19 5 5 19" />
+    <circle cx="7.5" cy="7.5" r="2.5" />
+    <circle cx="16.5" cy="16.5" r="2.5" />
+  </Svg>
+);
+
+export const DownloadIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 3v12m0 0 4-4m-4 4-4-4" />
+    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+  </Svg>
+);
+
 export const RefreshIcon = (p: P) => (
   <Svg {...p}>
     <path d="M21 12a9 9 0 1 1-2.9-6.6" />

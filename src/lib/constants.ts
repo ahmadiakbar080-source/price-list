@@ -53,4 +53,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   borderRadius: 6,
   rowSpacing: 10,
   baseFontSize: 16,
+  template: 'classic' as const,
+welcomeEnabled: false,
+welcomeDuration: 6,
+welcomeImageUrl: null,
 };

@@ -5,6 +5,7 @@ import { ToastProvider } from '@/hooks/useToast';
 import { FullPageLoader } from '@/components/ui/Spinner';
 import { PublicPriceListPage } from '@/pages/PublicPriceListPage';
 import { LoginPage } from '@/pages/admin/LoginPage';
+import PrintPage from '@/pages/admin/PrintPage';
 
 /** Admin bundle is code-split away from the lightweight public page. */
 const AdminApp = lazy(() => import('@/layouts/AdminLayout'));
@@ -24,7 +25,14 @@ function AppRoutes() {
       {/* Public customer page — no authentication (§5) */}
       <Route path="/" element={<PublicPriceListPage />} />
       <Route path="/price-list" element={<Navigate to="/" replace />} />
-
+<Route
+  path="/admin/print"
+  element={
+    <RequireAuth>
+      <PrintPage />
+    </RequireAuth>
+  }
+/>
       {/* Admin */}
       <Route path="/admin/login" element={<LoginPage />} />
       <Route

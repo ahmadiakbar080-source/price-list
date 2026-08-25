@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from '@/App';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import '@/index.css';
+import { registerServiceWorker } from '@/utils/pwa';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -11,3 +12,4 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 );
+registerServiceWorker();

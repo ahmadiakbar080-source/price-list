@@ -14,6 +14,7 @@ import {
   RocketIcon,
   TagIcon,
   XIcon,
+  TypeIcon,
 } from '@/components/icons';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/useToast';
@@ -28,12 +29,14 @@ import { AppearancePage } from '@/pages/admin/AppearancePage';
 import { GeneralSettingsPage } from '@/pages/admin/GeneralSettingsPage';
 import { PreviewPage } from '@/pages/admin/PreviewPage';
 import { PublishPage } from '@/pages/admin/PublishPage';
+import { TemplatesPage } from '@/pages/admin/TemplatesPage';
 
 const NAV = [
   { to: '/admin', label: 'داشبورد', icon: ChartIcon, end: true },
   { to: '/admin/products', label: 'محصولات', icon: BoxIcon, end: false },
   { to: '/admin/categories', label: 'دسته‌بندی‌ها', icon: TagIcon, end: false },
   { to: '/admin/appearance', label: 'ظاهر و فونت', icon: PaletteIcon, end: false },
+  { to: '/admin/templates', label: 'قالب و خوش‌آمد', icon: TypeIcon, end: false },
   { to: '/admin/settings', label: 'تنظیمات عمومی', icon: GearIcon, end: false },
   { to: '/admin/preview', label: 'پیش‌نمایش', icon: EyeIcon, end: false },
   { to: '/admin/publish', label: 'انتشار', icon: RocketIcon, end: false, pendingDot: true },
@@ -183,6 +186,7 @@ export default function AdminLayout() {
             <Route path="products" element={<ProductsPage />} />
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="appearance" element={<AppearancePage />} />
+            <Route path="templates" element={<TemplatesPage />} />
             <Route path="settings" element={<GeneralSettingsPage />} />
             <Route path="preview" element={<PreviewPage />} />
             <Route path="publish" element={<PublishPage onChanged={() => void loadStats()} />} />

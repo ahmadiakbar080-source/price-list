@@ -115,3 +115,23 @@ export async function getNextSortOrder(): Promise<number> {
   }
   return Number(data?.[0]?.sort_order ?? 0) + 10;
 }
+export async function applyPriceChange(opts: {
+  percent: number;
+  categoryId: string | null;
+  onlyActive: boolean;
+  roundTo: number;
+}): Promise<number> {
+  const { data, error } = await supabase.rpc('apply_price_change', {
+    p_percent: opts.percent,
+    p_category_id: opts.categoryId,
+    p_only_active: opts.onlyActive,
+    p_round_to: opts.roundTo,
+  });
+
+  if (error) {
+    console.error('[products] apply_price_change failed:', error.message);
+    throw new Error(GENERIC_ERROR);
+  }
+
+  return Number(data ?? 0);
+}

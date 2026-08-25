@@ -46,12 +46,17 @@ export interface AppSettings {
   borderRadius: number;
   rowSpacing: number;
   baseFontSize: number;
+  template: 'classic' | 'liquid-glass';
+welcomeEnabled: boolean;
+welcomeDuration: number;
+welcomeImageUrl: string | null;
 }
 
 /** Draft settings incl. storage paths needed for file replacement/removal. */
 export interface SettingsDraft extends AppSettings {
   logoPath: string | null;
   customFontPath: string | null;
+  welcomeImagePath: string | null;
 }
 
 export type SettingsPatch = Partial<Omit<SettingsDraft, 'id'>>;

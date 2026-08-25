@@ -36,6 +36,11 @@ function mapSettings(row: any): SettingsDraft {
     borderRadius: Number(row.border_radius ?? DEFAULT_SETTINGS.borderRadius),
     rowSpacing: Number(row.row_spacing ?? DEFAULT_SETTINGS.rowSpacing),
     baseFontSize: Number(row.base_font_size ?? DEFAULT_SETTINGS.baseFontSize),
+    template: row.template ?? 'classic',
+welcomeEnabled: row.welcome_enabled ?? false,
+welcomeDuration: Number(row.welcome_duration ?? 6),
+welcomeImageUrl: row.welcome_image_url ?? null,
+welcomeImagePath: row.welcome_image_path ?? null,
   };
 }
 
@@ -45,7 +50,9 @@ export async function getDraftSettings(): Promise<SettingsDraft> {
     console.error('[settings] load failed:', error.message);
     throw new Error(GENERIC_ERROR);
   }
-  return data ? mapSettings(data) : { ...DEFAULT_SETTINGS, logoPath: null, customFontPath: null };
+  return data
+    ? mapSettings(data)
+    : { ...DEFAULT_SETTINGS, logoPath: null, customFontPath: null, welcomeImagePath: null };
 }
 
 const PATCH_KEY_MAP = {
@@ -68,6 +75,11 @@ const PATCH_KEY_MAP = {
   borderRadius: 'border_radius',
   rowSpacing: 'row_spacing',
   baseFontSize: 'base_font_size',
+  template: 'template',
+welcomeEnabled: 'welcome_enabled',
+welcomeDuration: 'welcome_duration',
+welcomeImageUrl: 'welcome_image_url',
+welcomeImagePath: 'welcome_image_path',
 } as const;
 
 export async function updateDraftSettings(patch: SettingsPatch): Promise<void> {
@@ -110,6 +122,15 @@ export function removeFontFile(path: string | null): Promise<void> {
 
 /** Strip storage paths — published snapshot carries public URLs only. */
 export function toPublicSettings(draft: SettingsDraft): AppSettings {
-  const { logoPath: _l, customFontPath: _c, ...rest } = draft;
+  const { logoPath: _l, customFontPath: _c, welcomeImagePath: _w, ...rest } = draft;
   return rest;
+}
+export async function uploadWelcomeImage(file: File): Promise<UploadedFile> {
+  assertImage(file, LOGO_EXTENSIONS, MAX_IMAGE_MB);
+  const path = `welcome-${Date.now()}.${extensionOf(file.name)}`;
+  return uploadToBucket(BUCKET, path, file);
+}
+
+export function removeWelcomeImageFile(path: string | null): Promise<void> {
+  return removeFromBucket(BUCKET, path);
 }

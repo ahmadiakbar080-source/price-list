@@ -20,6 +20,8 @@ import {
   updateDraftSettings,
   uploadCustomFont,
   uploadLogo,
+  uploadWelcomeImage,
+removeWelcomeImageFile,
 } from '@/services/settings';
 import type { SettingsDraft } from '@/types';
 import { ensureBuiltinWebfont } from '@/utils/assets';
@@ -101,6 +103,8 @@ export function AppearancePage() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [clearLogo, setClearLogo] = useState(false);
   const [fontFile, setFontFile] = useState<File | null>(null);
+  const [welcomeFile, setWelcomeFile] = useState<File | null>(null);
+const [clearWelcome, setClearWelcome] = useState(false);
 
   useEffect(() => {
     getDraftSettings()
@@ -145,19 +149,40 @@ export function AppearancePage() {
         patch = { ...patch, logoUrl: up.url, logoPath: up.path };
       }
       if (clearLogo && !logoFile) {
-        patch = { ...patch, logoUrl: null, logoPath: null };
-      }
-      if (fontFile) {
-        const up = await uploadCustomFont(fontFile);
-        toast.success('فونت سفارشی با موفقیت آپلود شد.');
-        patch = {
-          ...patch,
-          fontFamily: 'custom',
-          customFontUrl: up.url,
-          customFontPath: up.path,
-          customFontName: up.name,
-        };
-      }
+  patch = { ...patch, logoUrl: null, logoPath: null };
+}
+
+if (welcomeFile) {
+  const up = await uploadWelcomeImage(welcomeFile);
+  toast.success('تصویر خوش‌آمدگویی با موفقیت آپلود شد.');
+
+  patch = {
+    ...patch,
+    welcomeImageUrl: up.url,
+    welcomeImagePath: up.path,
+  };
+}
+
+if (clearWelcome && !welcomeFile) {
+  patch = {
+    ...patch,
+    welcomeImageUrl: null,
+    welcomeImagePath: null,
+  };
+}
+
+if (fontFile) {
+  const up = await uploadCustomFont(fontFile);
+  toast.success('فونت سفارشی با موفقیت آپلود شد.');
+
+  patch = {
+    ...patch,
+    fontFamily: 'custom',
+    customFontUrl: up.url,
+    customFontPath: up.path,
+    customFontName: up.name,
+  };
+}
 
       const restOfDraft = { ...s };// eslint-disable-line @typescript-eslint/no-unused-vars
       const { fontFamily: _ff, ...restWithoutFont } = restOfDraft; // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -176,22 +201,34 @@ export function AppearancePage() {
         ...(patch.customFontUrl !== undefined ? { customFontUrl: patch.customFontUrl } : {}),
         customFontPath: patch.customFontPath,
         customFontName: patch.customFontName,
+        welcomeEnabled: patch.welcomeEnabled,
+welcomeDuration: patch.welcomeDuration,
+welcomeImageUrl: patch.welcomeImageUrl,
+welcomeImagePath: patch.welcomeImagePath,
       };
 
-      await updateDraftSettings(finalPatch);
+await updateDraftSettings(finalPatch);
 
-      // best-effort cleanup of replaced files
-      if (clearLogo && s.logoPath) void removeLogoFile(s.logoPath);
-      if (fontFile && previousFontPath) void removeFontFile(previousFontPath);
+// best-effort cleanup of replaced files
+if (clearLogo && s.logoPath) void removeLogoFile(s.logoPath);
 
-      setS(patch);
-      setLogoFile(null);
-      setClearLogo(false);
-      setFontFile(null);
-      toast.success('تغییرات با موفقیت ذخیره شد.');
+if ((welcomeFile || clearWelcome) && s.welcomeImagePath) {
+  void removeWelcomeImageFile(s.welcomeImagePath);
+}
+
+if (fontFile && previousFontPath) void removeFontFile(previousFontPath);
+
+setS(patch);
+setLogoFile(null);
+setWelcomeFile(null);
+setClearWelcome(false);
+setClearLogo(false);
+setFontFile(null);
+
+toast.success('تغییرات با موفقیت ذخیره شد.');
     } catch (e) {
-      console.error('[appearance] save:', e);
-      toast.error(e instanceof Error ? e.message : GENERIC_ERROR);
+      console.error(e);
+      toast.error(GENERIC_ERROR);
     } finally {
       setSaving(false);
     }
@@ -211,6 +248,29 @@ export function AppearancePage() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* ---------------- Font ---------------- */}
+        {/* تمپلیت */}
+<Card className="lg:col-span-2">
+  <SectionTitle>تمپلیت لیست قیمت</SectionTitle>
+  <div className="grid gap-3 sm:grid-cols-2">
+    {([
+      { value: 'classic', label: 'کلاسیک', desc: 'سبک فعلی — جدول رسمی با ردیف‌های یک‌درمیان' },
+      { value: 'liquid-glass', label: 'لیکوید گلس', desc: 'شیشه‌ای مات با گرادیان‌های رنگی و حاشیه‌های نورانی' },
+    ] as const).map((t) => (
+      <button
+        key={t.value}
+        type="button"
+        onClick={() => set('template', t.value)}
+        className={cn(
+          'rounded-2xl border-2 p-4 text-start transition',
+          s.template === t.value ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300',
+        )}
+      >
+        <p className="text-sm font-bold text-slate-800">{t.label}</p>
+        <p className="mt-1 text-xs leading-5 text-slate-500">{t.desc}</p>
+      </button>
+    ))}
+  </div>
+</Card>
         <Card>
           <SectionTitle>فونت فارسی</SectionTitle>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -327,6 +387,40 @@ export function AppearancePage() {
             />
           </div>
         </Card>
+
+        {/* خوش‌آمدگویی */}
+<Card>
+  <SectionTitle>صفحه خوش‌آمدگویی</SectionTitle>
+  <div className="space-y-4">
+    <Toggle
+      checked={s.welcomeEnabled}
+      onChange={(v) => set('welcomeEnabled', v)}
+      label="نمایش صفحه خوش‌آمدگویی هنگام ورود مشتری"
+    />
+    <Range
+      label="مدت نمایش"
+      value={s.welcomeDuration}
+      min={2}
+      max={15}
+      unit="ثانیه"
+      onChange={(v) => set('welcomeDuration', v)}
+    />
+    <ImagePicker
+      label="تصویر خوش‌آمدگویی"
+      currentUrl={
+        clearWelcome && !welcomeFile ? null : welcomeFile ? URL.createObjectURL(welcomeFile) : s.welcomeImageUrl
+      }
+      disabled={saving}
+      helpText="بهترین حالت: عمودی یا مربع — تمام‌صفحه نمایش داده می‌شود"
+      onFileChange={(f) => {
+        setWelcomeFile(f);
+        setClearWelcome(false);
+        if (!f && s.welcomeImageUrl) setClearWelcome(true);
+      }}
+    />
+  </div>
+</Card>
+
 
         {/* ---------------- Mini live preview ---------------- */}
         <Card className="lg:col-span-2">

@@ -9,6 +9,13 @@ import { FullPageLoader, Spinner } from '@/components/ui/Spinner';
 import { Toggle } from '@/components/ui/Toggle';
 import { InlineEdit } from '@/components/admin/InlineEdit';
 import { ProductFormModal } from '@/components/admin/ProductFormModal';
+import { PriceIncreaseModal } from '@/components/admin/PriceIncreaseModal';
+import { PercentIcon } from '@/components/icons';
+import type { Category } from '@/types';
+import { listCategories } from '@/services/categories';
+import { DownloadIcon } from '@/components/icons'; // به لیست آیکون‌ها اضافه شود
+import { getDraftSettings, toPublicSettings } from '@/services/settings';
+import { printPriceList } from '@/utils/pdf';
 import {
   BoxIcon,
   ChevronDownIcon,
@@ -45,6 +52,41 @@ export function ProductsPage() {
   const [deleting, setDeleting] = useState<Product | null>(null);
   const [busy, setBusy] = useState(false);
   const [orderSaving, setOrderSaving] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+const [priceModal, setPriceModal] = useState<{
+  open: boolean;
+  product: Product | null;
+}>({
+  open: false,
+  product: null,
+});
+
+const [exporting, setExporting] = useState(false);
+
+const exportPdf = async () => {
+  if (!products) return;
+
+  setExporting(true);
+
+  try {
+    const [s, cats] = await Promise.all([
+      getDraftSettings(),
+      listCategories().catch(() => []),
+    ]);
+
+    printPriceList(
+      toPublicSettings(s),
+      products.filter((p) => p.isActive),
+      cats
+    );
+  } catch (e) {
+    console.error(e);
+    toast.error(GENERIC_ERROR);
+  } finally {
+    setExporting(false);
+  }
+};
 
   // ---- data -----------------------------------------------------------------
   const reload = useCallback(
@@ -62,6 +104,9 @@ export function ProductsPage() {
   useEffect(() => {
     void reload();
   }, [reload]);
+  useEffect(() => {
+  listCategories().then(setCategories).catch(() => undefined);
+}, []);
 
   // Real-time sync across devices/admin tabs (§48) — debounced refetch.
   const rtTimer = useRef<number | undefined>(undefined);
@@ -194,6 +239,21 @@ export function ProductsPage() {
               }}
             >
               <PlusIcon /> افزودن محصول
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => void exportPdf()}
+              loading={exporting}
+            >
+              <DownloadIcon />
+              دانلود PDF
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => setPriceModal({ open: true, product: null })}
+            >
+              <PercentIcon />
+              تغییر قیمت ٪
             </Button>
           </>
         }
@@ -343,27 +403,37 @@ export function ProductsPage() {
                     <Toggle checked={p.isActive} onChange={() => void toggleActive(p)} />
 
                     {/* actions */}
-                    <div className="flex shrink-0 items-center gap-1">
-                      <button
-                        type="button"
-                        aria-label="ویرایش کامل"
-                        onClick={() => {
-                          setEditing(p);
-                          setFormOpen(true);
-                        }}
-                        className="rounded-lg p-2 text-slate-400 transition hover:bg-indigo-50 hover:text-indigo-600"
-                      >
-                        <PencilIcon className="text-base" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="حذف محصول"
-                        onClick={() => setDeleting(p)}
-                        className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                      >
-                        <TrashIcon className="text-base" />
-                      </button>
-                    </div>
+<div className="flex shrink-0 items-center gap-1">
+  <button
+    type="button"
+    aria-label="ویرایش کامل"
+    onClick={() => {
+      setEditing(p);
+      setFormOpen(true);
+    }}
+    className="rounded-lg p-2 text-slate-400 transition hover:bg-indigo-50 hover:text-indigo-600"
+  >
+    <PencilIcon className="text-base" />
+  </button>
+
+  <button
+    type="button"
+    aria-label="تغییر قیمت با درصد"
+    onClick={() => setPriceModal({ open: true, product: p })}
+    className="rounded-lg p-2 text-slate-400 transition hover:bg-amber-50 hover:text-amber-600"
+  >
+    <PercentIcon className="text-base" />
+  </button>
+
+  <button
+    type="button"
+    aria-label="حذف محصول"
+    onClick={() => setDeleting(p)}
+    className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+  >
+    <TrashIcon className="text-base" />
+  </button>
+</div>
                   </li>
                 );
               })}
@@ -408,6 +478,13 @@ export function ProductsPage() {
         onClose={() => setFormOpen(false)}
         onSaved={() => void reload(true)}
       />
+      <PriceIncreaseModal
+  open={priceModal.open}
+  product={priceModal.product}
+  categories={categories}
+  onClose={() => setPriceModal({ open: false, product: null })}
+  onApplied={() => void reload(true)}
+/>
 
       <ConfirmDialog
         open={!!deleting}

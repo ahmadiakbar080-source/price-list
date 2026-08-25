@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { WelcomeSplash } from '@/components/public/WelcomeSplash';
 import { PriceListDocument } from '@/components/public/PriceListDocument';
 import { Button } from '@/components/ui/Button';
 import { FullPageLoader } from '@/components/ui/Spinner';
@@ -56,11 +57,18 @@ export function PublicPriceListPage() {
   if (!data) return <FullPageLoader label="در حال دریافت لیست قیمت…" />;
 
     return (
+  <>
+    {data.settings.welcomeEnabled &&
+      data.settings.welcomeImageUrl && (
+        <WelcomeSplash settings={data.settings} />
+      )}
+
     <PriceListDocument
       settings={data.settings}
       products={data.products}
       categories={data.categories}
       lastPublishedAt={data.lastPublishedAt}
     />
-  );
+  </>
+);
 }

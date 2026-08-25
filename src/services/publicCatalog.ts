@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase';
 import { DEFAULT_SETTINGS } from '@/lib/constants';
 import type { AppSettings, Category, Product, PublicPriceListData } from '@/types';
 
@@ -22,6 +23,10 @@ function mapPublishedSettings(row: any): AppSettings {
     borderRadius: Number(row?.border_radius ?? DEFAULT_SETTINGS.borderRadius),
     rowSpacing: Number(row?.row_spacing ?? DEFAULT_SETTINGS.rowSpacing),
     baseFontSize: Number(row?.base_font_size ?? DEFAULT_SETTINGS.baseFontSize),
+    template: row?.template ?? 'classic',
+welcomeEnabled: row?.welcome_enabled ?? false,
+welcomeDuration: Number(row?.welcome_duration ?? 6),
+welcomeImageUrl: row?.welcome_image_url ?? null,
   };
 }
 
@@ -31,9 +36,9 @@ function mapPublishedProduct(row: any): Product {
     name: String(row.name ?? ''),
     price: Number(row.price ?? 0),
     description: row.description ?? null,
-    imageUrl: row.image_url ?? null,
     categoryId: row.category_id ?? null,
-    isActive: true,
+    imageUrl: row.image_url ?? null,
+    isActive: true, // guaranteed by RLS + query
     sortOrder: Number(row.sort_order ?? 0),
   };
 }
@@ -46,20 +51,39 @@ function mapPublishedCategory(row: any): Category {
   };
 }
 
-/** دریافت اطلاعات کامل لیست قیمت از طریق Cloudflare Function */
+/**
+ * Reads ONLY the published snapshot (anonymous-safe thanks to RLS).
+ * Draft tables are never touched here — enforced by the database itself.
+ */
 export async function getPublicPriceList(): Promise<PublicPriceListData> {
-  const response = await fetch('/api/products');
+  const [settingsRes, productsRes, categoriesRes, publicationRes] = await Promise.all([
+    supabase.from('published_settings').select('*').eq('id', 1).maybeSingle(),
+    supabase
+      .from('published_products')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .order('name', { ascending: true }),
+    supabase
+      .from('published_categories')
+      .select('*')
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('publications')
+      .select('published_at')
+      .order('published_at', { ascending: false })
+      .limit(1),
+  ]);
 
-  if (!response.ok) {
-    throw new Error('خطا در دریافت اطلاعات از API');
-  }
-
-  const data = await response.json();
+  if (settingsRes.error) throw new Error(settingsRes.error.message);
+  if (productsRes.error) throw new Error(productsRes.error.message);
+  if (categoriesRes.error) throw new Error(categoriesRes.error.message);
+  if (publicationRes.error) throw new Error(publicationRes.error.message);
 
   return {
-    settings: mapPublishedSettings(data.settings),
-    products: (data.products ?? []).map(mapPublishedProduct),
-    categories: (data.categories ?? []).map(mapPublishedCategory),
-    lastPublishedAt: data.publication?.published_at ?? null,
+    settings: mapPublishedSettings(settingsRes.data),
+    products: (productsRes.data ?? []).map(mapPublishedProduct),
+    categories: (categoriesRes.data ?? []).map(mapPublishedCategory),
+    lastPublishedAt: (publicationRes.data?.[0] as any)?.published_at ?? null,
   };
 }
