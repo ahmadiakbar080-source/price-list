@@ -1,7 +1,13 @@
 export type BuiltinFont = 'Vazirmatn' | 'Estedad' | 'Shabnam';
 export type FontFamily = BuiltinFont | 'custom';
 export type TableStyle = 'minimal' | 'bordered' | 'striped';
-
+export type TemplateId =
+  | 'classic'
+  | 'liquid-glass'
+  | 'premium-dark'
+  | 'minimal-white'
+  | 'neon-future'
+  | 'luxury-editorial';
 export interface Product {
   id: string;
   name: string;
@@ -46,7 +52,7 @@ export interface AppSettings {
   borderRadius: number;
   rowSpacing: number;
   baseFontSize: number;
-  template: 'classic' | 'liquid-glass';
+  template: TemplateId;
 welcomeEnabled: boolean;
 welcomeDuration: number;
 welcomeImageUrl: string | null;

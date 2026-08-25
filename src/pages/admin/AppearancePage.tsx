@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { FullPageLoader } from '@/components/ui/Spinner';
 import { Toggle } from '@/components/ui/Toggle';
 import { ImagePicker } from '@/components/admin/ImagePicker';
+import { TemplatePicker } from '@/components/admin/TemplatePicker';
 import { useToast } from '@/hooks/useToast';
 import {
   BUILTIN_FONTS,
@@ -249,28 +250,7 @@ toast.success('تغییرات با موفقیت ذخیره شد.');
       <div className="grid gap-5 lg:grid-cols-2">
         {/* ---------------- Font ---------------- */}
         {/* تمپلیت */}
-<Card className="lg:col-span-2">
-  <SectionTitle>تمپلیت لیست قیمت</SectionTitle>
-  <div className="grid gap-3 sm:grid-cols-2">
-    {([
-      { value: 'classic', label: 'کلاسیک', desc: 'سبک فعلی — جدول رسمی با ردیف‌های یک‌درمیان' },
-      { value: 'liquid-glass', label: 'لیکوید گلس', desc: 'شیشه‌ای مات با گرادیان‌های رنگی و حاشیه‌های نورانی' },
-    ] as const).map((t) => (
-      <button
-        key={t.value}
-        type="button"
-        onClick={() => set('template', t.value)}
-        className={cn(
-          'rounded-2xl border-2 p-4 text-start transition',
-          s.template === t.value ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300',
-        )}
-      >
-        <p className="text-sm font-bold text-slate-800">{t.label}</p>
-        <p className="mt-1 text-xs leading-5 text-slate-500">{t.desc}</p>
-      </button>
-    ))}
-  </div>
-</Card>
+        <TemplatePicker value={s.template} onChange={(v) => set('template', v)} />
         <Card>
           <SectionTitle>فونت فارسی</SectionTitle>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
