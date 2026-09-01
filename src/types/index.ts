@@ -13,6 +13,8 @@ export interface Product {
   name: string;
   price: number;
   description: string | null;
+  purchase_price: number;
+stock_quantity: number;
   categoryId: string | null;
   imageUrl: string | null;
   /** Present on draft rows only (used for storage lifecycle). */
@@ -23,10 +25,81 @@ export interface Product {
   updatedAt?: string;
 }
 
+export interface SaleItem {
+  id: string;
+  sale_id: string;
+  product_id: string | null;
+
+  // Snapshot محصول در زمان فروش
+  product_name: string;
+
+  quantity: number;
+
+  purchase_price: number;
+  sale_price: number;
+
+  gross_total: number;
+  discount_amount: number;
+  net_total: number;
+
+  total_cost: number;
+  profit: number;
+
+  created_at: string;
+}
+
+export interface Sale {
+  id: string;
+
+  customer_name: string;
+  customer_phone: string | null;
+  project_address: string | null;
+
+  subtotal: number;
+  discount: number;
+  total: number;
+
+  total_cost: number;
+  total_profit: number;
+
+  created_at: string;
+  created_by: string | null;
+
+  items?: SaleItem[];
+}
+
+export interface CreateSaleItem {
+  product_id: string;
+  quantity: number;
+}
+
+export interface CreateSaleInput {
+  customer_name: string;
+  customer_phone?: string;
+  project_address?: string;
+  discount: number;
+  items: CreateSaleItem[];
+}
+
+export interface CreateSaleResult {
+  sale_id: string;
+
+  subtotal: number;
+  discount: number;
+  total: number;
+
+  total_cost: number;
+  total_profit: number;
+
+  created_at: string;
+}
+
 export interface ProductInput {
   name: string;
   price: number;
   description: string | null;
+  purchasePrice: number;
+stockQuantity: number;
   categoryId: string | null;
   imageUrl: string | null;
   imagePath: string | null;

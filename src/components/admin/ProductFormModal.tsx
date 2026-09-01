@@ -29,6 +29,8 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
 
   const [name, setName] = useState('');
   const [price, setPrice] = useState<number | null>(null);
+  const [purchasePrice, setPurchasePrice] = useState<number | null>(0);
+  const [stockQuantity, setStockQuantity] = useState<number>(0);
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState<string>('');
   const [categories, setCategories] = useState<Category[]>([]);
@@ -48,6 +50,8 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
     if (product) {
       setName(product.name);
       setPrice(product.price);
+      setPurchasePrice(product.purchase_price);
+      setStockQuantity(product.stock_quantity);
       setDescription(product.description ?? '');
       setCategoryId(product.categoryId ?? '');
       setIsActive(product.isActive);
@@ -55,6 +59,8 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
     } else {
       setName('');
       setPrice(null);
+      setPurchasePrice(0);
+      setStockQuantity(0);
       setCategoryId('');
       setIsActive(true);
       void getNextSortOrder().then(setSortOrder);
@@ -80,6 +86,8 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
       const payload = {
         name: name.trim(),
         price: price as number,
+        purchasePrice: purchasePrice ?? 0,
+        stockQuantity: Math.max(0, Math.trunc(stockQuantity)),
         description: description.trim() || null,
         categoryId: categoryId || null,
         imageUrl: uploaded ? uploaded.url : keepExisting ? (product?.imageUrl ?? null) : null,
@@ -180,13 +188,40 @@ export function ProductFormModal({ open, product, onClose, onSaved }: Props) {
           </p>
         </label>
 
-        <div>
-          <span className="mb-1.5 block text-sm font-medium text-slate-700">قیمت مصرف‌کننده</span>
-          <div className="flex items-center gap-2">
-            <MoneyInput initialValue={price} onChangeValue={setPrice} disabled={submitting} />
-            <span className="shrink-0 text-sm text-slate-500">تومان</span>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">قیمت مصرف‌کننده</span>
+            <div className="flex items-center gap-2">
+              <MoneyInput initialValue={price} onChangeValue={setPrice} disabled={submitting} />
+              <span className="shrink-0 text-sm text-slate-500">تومان</span>
+            </div>
+            {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
           </div>
-          {errors.price && <p className="mt-1 text-xs text-red-600">{errors.price}</p>}
+
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-slate-700">قیمت خرید</span>
+            <div className="flex items-center gap-2">
+              <MoneyInput
+                initialValue={purchasePrice}
+                onChangeValue={setPurchasePrice}
+                disabled={submitting}
+              />
+              <span className="shrink-0 text-sm text-slate-500">تومان</span>
+            </div>
+            <p className="mt-1 text-xs text-slate-400">فقط در پنل مدیریت</p>
+          </div>
+
+          <Input
+            label="موجودی"
+            type="number"
+            dir="ltr"
+            min={0}
+            step={1}
+            value={stockQuantity}
+            disabled={submitting}
+            onChange={(e) => setStockQuantity(Math.max(0, Number(e.target.value) || 0))}
+            hint="فقط در پنل مدیریت"
+          />
         </div>
 
         <div className="grid grid-cols-2 gap-4">

@@ -397,6 +397,25 @@ const exportPdf = async () => {
                           onCommit={(v) => commitInline(p, { price: Number(v) }, 'price')}
                         />
                       </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+                        <span className="text-slate-500">
+                          قیمت خرید:{' '}
+                          <span className="font-semibold text-emerald-700 tabular-nums">
+                            {formatPrice(p.purchase_price, 'تومان')}
+                          </span>
+                        </span>
+                        <span className="text-slate-500">
+                          موجودی:{' '}
+                          <span
+                            className={cn(
+                              'font-semibold tabular-nums',
+                              p.stock_quantity <= 0 ? 'text-red-600' : 'text-slate-700'
+                            )}
+                          >
+                            {p.stock_quantity.toLocaleString('fa-IR')}
+                          </span>
+                        </span>
+                      </div>
                     </div>
 
                     {/* active toggle */}

@@ -21,6 +21,8 @@ function mapProduct(row: any): Product {
     sortOrder: Number(row.sort_order ?? 0),
     createdAt: row.created_at ?? undefined,
     updatedAt: row.updated_at ?? undefined,
+    purchase_price: row.purchase_price ?? 0,
+stock_quantity: row.stock_quantity ?? 0,
   };
 }
 
@@ -69,6 +71,8 @@ export async function updateProduct(id: string, patch: Partial<ProductInput>): P
   if (patch.imagePath !== undefined) upd.image_path = patch.imagePath;
   if (patch.isActive !== undefined) upd.is_active = patch.isActive;
   if (patch.sortOrder !== undefined) upd.sort_order = patch.sortOrder;
+  if (patch.purchasePrice !== undefined) upd.purchase_price = patch.purchasePrice;
+  if (patch.stockQuantity !== undefined) upd.stock_quantity = Math.max(0, Math.trunc(patch.stockQuantity));
 
   const { data, error } = await supabase.from(TABLE).update(upd).eq('id', id).select('*').single();
   if (error) {

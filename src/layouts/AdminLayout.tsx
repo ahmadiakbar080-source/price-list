@@ -23,6 +23,7 @@ import { getDashboardStats } from '@/services/publication';
 import type { DashboardStats } from '@/types';
 import { cn } from '@/utils/cn';
 import { DashboardPage } from '@/pages/admin/DashboardPage';
+import { NewSalePage } from '@/pages/admin/NewSalePage';
 import { ProductsPage } from '@/pages/admin/ProductsPage';
 import { CategoriesPage } from '@/pages/admin/CategoriesPage';
 import { AppearancePage } from '@/pages/admin/AppearancePage';
@@ -30,11 +31,24 @@ import { GeneralSettingsPage } from '@/pages/admin/GeneralSettingsPage';
 import { PreviewPage } from '@/pages/admin/PreviewPage';
 import { PublishPage } from '@/pages/admin/PublishPage';
 import { TemplatesPage } from '@/pages/admin/TemplatesPage';
+import { SalesPage } from '@/pages/admin/SalesPage';
 
 const NAV = [
   { to: '/admin', label: 'داشبورد', icon: ChartIcon, end: true },
   { to: '/admin/products', label: 'محصولات', icon: BoxIcon, end: false },
   { to: '/admin/categories', label: 'دسته‌بندی‌ها', icon: TagIcon, end: false },
+  {
+  to: '/admin/sales/new',
+  label: 'ثبت فروش',
+  icon: ChartIcon,
+  end: false,
+},
+{
+  to: '/admin/sales',
+  label: 'فروش‌ها',
+  icon: ChartIcon,
+  end: false,
+},
   { to: '/admin/appearance', label: 'ظاهر و فونت', icon: PaletteIcon, end: false },
   { to: '/admin/templates', label: 'قالب و خوش‌آمد', icon: TypeIcon, end: false },
   { to: '/admin/settings', label: 'تنظیمات عمومی', icon: GearIcon, end: false },
@@ -180,19 +194,20 @@ export default function AdminLayout() {
           {pendingChanges ? <Badge tone="amber">منتشرنشده</Badge> : <Badge tone="green">به‌روز</Badge>}
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-          <Routes>
-            <Route index element={<DashboardPage />} />
-            <Route path="products" element={<ProductsPage />} />
-            <Route path="categories" element={<CategoriesPage />} />
-            <Route path="appearance" element={<AppearancePage />} />
-            <Route path="templates" element={<TemplatesPage />} />
-            <Route path="settings" element={<GeneralSettingsPage />} />
-            <Route path="preview" element={<PreviewPage />} />
-            <Route path="publish" element={<PublishPage onChanged={() => void loadStats()} />} />
-            <Route path="*" element={<FullPageLoader />} />
-          </Routes>
-        </main>
+<Routes>
+  <Route index element={<DashboardPage />} />
+  <Route path="products" element={<ProductsPage />} />
+  <Route path="categories" element={<CategoriesPage />} />
+  <Route path="appearance" element={<AppearancePage />} />
+  <Route path="templates" element={<TemplatesPage />} />
+  <Route path="settings" element={<GeneralSettingsPage />} />
+  <Route path="preview" element={<PreviewPage />} />
+  <Route path="publish" element={<PublishPage onChanged={() => void loadStats()} />} />
+
+  <Route path="sales/new" element={<NewSalePage />} />
+<Route path="sales" element={<SalesPage />} />
+  <Route path="*" element={<FullPageLoader />} />
+</Routes>
       </div>
     </div>
   );

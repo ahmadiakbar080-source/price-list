@@ -40,6 +40,8 @@ function mapPublishedProduct(row: any): Product {
     imageUrl: row.image_url ?? null,
     isActive: true, // guaranteed by RLS + query
     sortOrder: Number(row.sort_order ?? 0),
+    purchase_price: 0,
+stock_quantity: 0,
   };
 }
 
