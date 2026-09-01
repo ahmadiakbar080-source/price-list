@@ -120,6 +120,11 @@ export function NewSalePage() {
     subtotal - discount
   );
 
+  const [search, setSearch] = useState('');
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   async function submitSale() {
 
@@ -237,45 +242,51 @@ export function NewSalePage() {
           انتخاب محصول
         </h2>
 
+        <input
+          className="mb-4 w-full rounded-lg border p-3"
+          placeholder="جستجوی محصول..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
 
-        <div className="grid gap-3 md:grid-cols-3">
+        {search && (
+          <div className="grid gap-3 md:grid-cols-3">
 
-          {products.map(product=>(
+            {filteredProducts.map(product => (
 
-            <button
-              key={product.id}
-              onClick={()=>addProduct(product)}
-              className="rounded-xl border p-4 text-right hover:bg-slate-50"
-            >
+              <button
+                key={product.id}
+                onClick={() => {
+                  addProduct(product);
+                  setSearch('');
+                }}
+                className="rounded-xl border p-4 text-right hover:bg-slate-50"
+              >
+                <div className="font-bold">
+                  {product.name}
+                </div>
 
-              <div className="font-bold">
-                {product.name}
+                <div className="text-sm text-slate-500">
+                  موجودی: {product.stock_quantity}
+                </div>
+
+                <div className="text-indigo-600">
+                  {product.price.toLocaleString()} تومان
+                </div>
+              </button>
+
+            ))}
+
+            {!filteredProducts.length && (
+              <div className="text-slate-500">
+                محصولی پیدا نشد
               </div>
+            )}
 
-
-              <div className="text-sm text-slate-500">
-                موجودی:
-                {' '}
-                {product.stock_quantity}
-              </div>
-
-
-              <div className="text-indigo-600">
-                {product.price.toLocaleString()}
-                {' '}
-                تومان
-              </div>
-
-
-            </button>
-
-          ))}
-
-        </div>
+          </div>
+        )}
 
       </div>
-
-
 
 
       <div className="rounded-2xl bg-white p-5 shadow">
