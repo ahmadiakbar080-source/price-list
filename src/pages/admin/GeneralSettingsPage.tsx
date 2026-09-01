@@ -47,11 +47,16 @@ export function GeneralSettingsPage() {
     setSaving(true);
     try {
       await updateDraftSettings({
-        brandName: s.brandName.trim() || 'برند من',
-        listTitle: s.listTitle.trim() || 'لیست قیمت محصولات',
-        currency: finalCurrency,
-        showUpdateDate: s.showUpdateDate,
-      });
+  brandName: s.brandName.trim() || 'برند من',
+  listTitle: s.listTitle.trim() || 'لیست قیمت محصولات',
+  currency: finalCurrency,
+  showUpdateDate: s.showUpdateDate,
+
+  invoiceStoreName: s.invoiceStoreName.trim(),
+  invoicePhone: s.invoicePhone.trim(),
+  invoiceAddress: s.invoiceAddress.trim(),
+  invoiceFooterText: s.invoiceFooterText.trim(),
+});
       toast.success('تغییرات با موفقیت ذخیره شد.');
     } catch (e) {
       console.error(e);
@@ -134,6 +139,71 @@ export function GeneralSettingsPage() {
             />
           )}
         </div>
+
+        <Card className="mt-5 space-y-5">
+
+  <SectionTitle>
+    تنظیمات فاکتور
+  </SectionTitle>
+
+
+  <Input
+    label="نام فروشگاه روی فاکتور"
+    value={s.invoiceStoreName}
+    disabled={saving}
+    onChange={(e) =>
+      setS({
+        ...s,
+        invoiceStoreName: e.target.value,
+      })
+    }
+    placeholder="مثلاً فروشگاه آریا"
+  />
+
+
+  <Input
+    label="شماره تماس فروشگاه"
+    value={s.invoicePhone}
+    disabled={saving}
+    onChange={(e) =>
+      setS({
+        ...s,
+        invoicePhone: e.target.value,
+      })
+    }
+    placeholder="0912xxxxxxx"
+  />
+
+
+  <Input
+    label="آدرس فروشگاه"
+    value={s.invoiceAddress}
+    disabled={saving}
+    onChange={(e) =>
+      setS({
+        ...s,
+        invoiceAddress: e.target.value,
+      })
+    }
+    placeholder="آدرس..."
+  />
+
+
+  <Input
+    label="متن پایین فاکتور"
+    value={s.invoiceFooterText}
+    disabled={saving}
+    onChange={(e) =>
+      setS({
+        ...s,
+        invoiceFooterText: e.target.value,
+      })
+    }
+    placeholder="با تشکر از خرید شما"
+  />
+
+
+</Card>
 
         <Toggle
           checked={s.showUpdateDate}

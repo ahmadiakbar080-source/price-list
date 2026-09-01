@@ -54,7 +54,8 @@ export interface Sale {
   customer_name: string;
   customer_phone: string | null;
   project_address: string | null;
-
+invoice_number: string;
+customer_number: string;
   subtotal: number;
   discount: number;
   total: number;
@@ -87,7 +88,8 @@ export interface CreateSaleResult {
   subtotal: number;
   discount: number;
   total: number;
-
+invoice_number: string;
+customer_number: string;
   total_cost: number;
   total_profit: number;
 
@@ -114,6 +116,10 @@ export interface AppSettings {
   showUpdateDate: boolean;
   showLogo: boolean;
   logoUrl: string | null;
+    invoiceStoreName: string;
+  invoicePhone: string;
+  invoiceAddress: string;
+  invoiceFooterText: string;
   fontFamily: FontFamily;
   customFontUrl: string | null;
   customFontName: string | null;

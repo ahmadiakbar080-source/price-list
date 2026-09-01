@@ -32,6 +32,7 @@ import { PreviewPage } from '@/pages/admin/PreviewPage';
 import { PublishPage } from '@/pages/admin/PublishPage';
 import { TemplatesPage } from '@/pages/admin/TemplatesPage';
 import { SalesPage } from '@/pages/admin/SalesPage';
+import { InvoicePage } from '@/pages/admin/InvoicePage';
 
 const NAV = [
   { to: '/admin', label: 'داشبورد', icon: ChartIcon, end: true },
@@ -206,6 +207,7 @@ export default function AdminLayout() {
 
   <Route path="sales/new" element={<NewSalePage />} />
 <Route path="sales" element={<SalesPage />} />
+<Route path="invoice/:id" element={<InvoicePage />} />
   <Route path="*" element={<FullPageLoader />} />
 </Routes>
       </div>

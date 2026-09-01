@@ -26,15 +26,18 @@ export async function createSale(
   }));
 
   const { data, error } = await supabase.rpc(
-    'create_sale',
-    {
-      p_customer_name: input.customer_name,
-      p_customer_phone: input.customer_phone ?? null,
-      p_project_address: input.project_address ?? null,
-      p_discount: input.discount ?? 0,
-      p_items: payload,
-    }
-  );
+  'create_sale',
+  {
+    p_customer_name: input.customer_name,
+    p_customer_phone: input.customer_phone ?? null,
+    p_project_address: input.project_address ?? null,
+    p_discount: input.discount ?? 0,
+    p_items: payload,
+
+    p_invoice_number: null,
+    p_customer_number: null,
+  }
+);
 
   if (error) {
     console.error('[sales] create failed:', error.message);
@@ -42,17 +45,21 @@ export async function createSale(
   }
 
   return {
-    sale_id: data.sale_id,
+  sale_id: data.sale_id,
 
-    subtotal: Number(data.subtotal ?? 0),
-    discount: Number(data.discount ?? 0),
-    total: Number(data.total ?? 0),
+  invoice_number: data.invoice_number,
 
-    total_cost: Number(data.total_cost ?? 0),
-    total_profit: Number(data.total_profit ?? 0),
+  customer_number: data.customer_number,
 
-    created_at: data.created_at,
-  };
+  subtotal: Number(data.subtotal ?? 0),
+  discount: Number(data.discount ?? 0),
+  total: Number(data.total ?? 0),
+
+  total_cost: Number(data.total_cost ?? 0),
+  total_profit: Number(data.total_profit ?? 0),
+
+  created_at: data.created_at,
+};
 }
 
 
@@ -95,7 +102,8 @@ export async function listSales(): Promise<Sale[]> {
 
     created_at: row.created_at,
     created_by: row.created_by,
-
+invoice_number: row.invoice_number,
+customer_number: row.customer_number,
     items: row.items ?? [],
   }));
 }
@@ -140,7 +148,8 @@ export async function getSaleById(
 
     created_at: data.created_at,
     created_by: data.created_by,
-
+invoice_number: data.invoice_number,
+customer_number: data.customer_number,
     items: data.items ?? [],
   };
 }

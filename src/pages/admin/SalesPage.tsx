@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { listSales } from '@/services/sales';
 import type { Sale } from '@/types';
 import { useToast } from '@/hooks/useToast';
-
+import { useNavigate } from 'react-router-dom';
 
 function formatMoney(value: number) {
   return value.toLocaleString('fa-IR') + ' تومان';
@@ -12,7 +12,7 @@ function formatMoney(value: number) {
 export function SalesPage() {
 
   const toast = useToast();
-
+const navigate = useNavigate();
   const [sales, setSales] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -106,6 +106,10 @@ export function SalesPage() {
                   تاریخ
                 </th>
 
+                <th className="p-4 text-right">
+  عملیات
+</th>
+
               </tr>
 
             </thead>
@@ -157,6 +161,23 @@ export function SalesPage() {
                     ).toLocaleDateString('fa-IR')}
                   </td>
 
+<td className="p-4">
+
+  <button
+
+    onClick={() =>
+      navigate(`/admin/invoice/${sale.id}`)
+    }
+
+    className="rounded-lg bg-indigo-600 px-3 py-2 text-xs text-white hover:bg-indigo-700"
+
+  >
+
+    🧾 صدور فاکتور
+
+  </button>
+
+</td>
 
                 </tr>
 
@@ -168,7 +189,7 @@ export function SalesPage() {
                 <tr>
 
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="p-8 text-center text-slate-500"
                   >
                     هنوز فروشی ثبت نشده است
